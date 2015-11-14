@@ -118,6 +118,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 byte data[] = new byte[4096];
                 long total = 0;
                 int count;
+                boolean has_tab = false;
                 int count_acronyms = 0;
                 while ((count = input.read(data)) != -1) {
                     // allow canceling with back button
@@ -131,8 +132,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         publishProgress((int) (total * 100 / fileLength));
                     output.write(data, 0, count);
                     for (int i = 0; i < data.length; i++) {
-                        if (data[i] == '\n') {
-                            count_acronyms++;
+                        switch (data[i]) {
+                        case '\t':
+                            has_tab = true;
+                            break;
+                        case '\n':
+                            if (has_tab)
+                                count_acronyms++;
+                            has_tab = false;
+                            break;
                         }
                     }
                 }

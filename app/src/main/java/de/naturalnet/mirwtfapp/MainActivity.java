@@ -232,6 +232,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 super.onCreate(savedInstanceState);
                 ProgressBar bar = (ProgressBar) findViewById(android.R.id.progress);
                 bar.getProgressDrawable().setColorFilter(0xFF22C819 /*XXX FIXME getColor(R.color.colorAccent)*/, android.graphics.PorterDuff.Mode.SRC_IN);
+                bar.getIndeterminateDrawable().setColorFilter(0xFF22C819 /*XXX FIXME getColor(R.color.colorAccent)*/, android.graphics.PorterDuff.Mode.SRC_IN);
             }
         };
         mProgressDialog.setMessage("Downloading acronyms…");

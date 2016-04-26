@@ -28,9 +28,9 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.KeyEvent;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
@@ -40,6 +40,7 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.WtfArrayAdapter;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -466,7 +467,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // Link list of known acronyms to text field auto completion
         Object[] sorted = acronyms.keySet().toArray();
         Arrays.sort(sorted);
-        ArrayAdapter acronymKeys = new ArrayAdapter(this, android.R.layout.simple_list_item_1, sorted);
+        ArrayAdapter acronymKeys = new WtfArrayAdapter(this, android.R.layout.simple_list_item_1, sorted, this);
         eAcronym.setAdapter(acronymKeys);
     }
 

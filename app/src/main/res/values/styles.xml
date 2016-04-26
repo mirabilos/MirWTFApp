@@ -9,6 +9,7 @@
         <item name="android:textColorPrimary">@color/primary_text_material_dark</item>
         <item name="android:textColorSecondary">@color/secondary_text_material_dark</item>
         <item name="android:textColor">@color/primary_text_material_dark</item>
+        <item name="android:textColorLink">@color/colorAccent</item>
     </style>
     <style name="AppTheme.NoActionBar">
         <item name="windowActionBar">false</item>

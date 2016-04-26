@@ -38,6 +38,7 @@ import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.WtfArrayAdapter;
@@ -225,7 +226,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setSupportActionBar(toolbar);
 
         // Initalise progress dialog
-        mProgressDialog = new ProgressDialog(MainActivity.this);
+        mProgressDialog = new ProgressDialog(MainActivity.this) {
+            @Override
+            protected void onCreate(android.os.Bundle savedInstanceState) {
+                super.onCreate(savedInstanceState);
+                ProgressBar bar = (ProgressBar) findViewById(android.R.id.progress);
+                bar.getProgressDrawable().setColorFilter(0xFF22C819 /*XXX FIXME getColor(R.color.colorAccent)*/, android.graphics.PorterDuff.Mode.SRC_IN);
+            }
+        };
         mProgressDialog.setMessage("Downloading acronyms…");
         mProgressDialog.setIndeterminate(true);
         mProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
@@ -304,6 +312,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         return true;
     }
 
+    protected void styleDialogue(AlertDialog.Builder builder) {
+        AlertDialog dialog = builder.show();
+
+        // Set title divider color
+        int titleDividerId = getResources().getIdentifier("titleDivider", "id", "android");
+        View titleDivider = dialog.findViewById(titleDividerId);
+        if (titleDivider != null)
+            titleDivider.setBackgroundColor(0xFF22C819); //XXX FIXME getColor(R.color.colorAccent));
+    }
+
     /**
      * Called when an action bar item was clicked
      *
@@ -335,7 +353,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 tAcronymsSource.append("\n\nCat content © 2015 Dominik George, CC-BY-SA 3.0+.");
             }
             builder.create();
-            builder.show();
+            styleDialogue(builder);
         }
 
         return super.onOptionsItemSelected(item);
@@ -385,7 +403,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 builder.setTitle(R.string.miau);
                 builder.setView(catView);
                 builder.create();
-                builder.show();
+                styleDialogue(builder);
             }
         }
 

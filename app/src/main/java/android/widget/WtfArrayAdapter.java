@@ -31,7 +31,10 @@ import java.util.Arrays;
 import de.naturalnet.mirwtfapp.MainActivity;
 
 /**
- * Created by mirabilos on 26.04.16.
+ * ArrayAdapter extension to pre-filter autocompletion.
+ * Created by mirabilos on 26.04.2016.
+ *
+ * @author mirabilos <m@mirbsd.org>
  */
 public class WtfArrayAdapter<T> extends ArrayAdapter<T> {
     private MainActivity sParent;
@@ -42,11 +45,13 @@ public class WtfArrayAdapter<T> extends ArrayAdapter<T> {
      * Constructor
      *
      * @param context  The current context.
-     * @param resource The resource ID for a layout file containing a TextView to use when
-     *                 instantiating views.
+     * @param resource The resource ID for a layout file containing a TextView
+     *                 to use when instantiating views.
      * @param objects  The objects to represent in the ListView.
+     * @param parent   The object containing the normalisation method
      */
-    public WtfArrayAdapter(Context context, @LayoutRes int resource, @NonNull T[] objects, MainActivity parent) {
+    public WtfArrayAdapter(Context context, @LayoutRes int resource,
+      @NonNull T[] objects, MainActivity parent) {
         super(context, resource, 0, Arrays.asList(objects));
         sParent = parent;
         sFilter = new WtfArrayFilter();
@@ -63,18 +68,19 @@ public class WtfArrayAdapter<T> extends ArrayAdapter<T> {
     }
 
     /**
-     * <p>An array filter constrains the content of the array adapter with
-     * a prefix. Each item that does not start with the supplied prefix
-     * is removed from the list.</p>
+     * Constrains the content of the array adapter with a prefix,
+     * after acronym normalisation.
      */
     private class WtfArrayFilter extends Filter {
         @Override
         protected FilterResults performFiltering(CharSequence prefix) {
-            return pFilter.performFiltering(prefix == null ? null : sParent.normaliseAcronym(prefix.toString()));
+            return pFilter.performFiltering(prefix == null ? null :
+              sParent.normaliseAcronym(prefix.toString()));
         }
 
         @Override
-        protected void publishResults(CharSequence constraint, FilterResults results) {
+        protected void publishResults(CharSequence constraint,
+          FilterResults results) {
             pFilter.publishResults(constraint, results);
         }
     }

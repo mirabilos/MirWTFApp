@@ -23,6 +23,7 @@ package de.naturalnet.mirwtfapp;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -37,6 +38,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -399,12 +401,30 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             // Cat content if enough MIAU
             if (cats == 3) {
-                View catView = getLayoutInflater().inflate(R.layout.dialog_eastercat, null, false);
+                final View catView = getLayoutInflater().inflate(R.layout.dialog_eastercat, null, false);
                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
                 builder.setTitle(R.string.miau);
                 builder.setView(catView);
                 builder.create();
                 styleDialogue(builder);
+
+                catView.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        // Get image view and size
+                        ImageView iCat = (ImageView) catView.findViewById(R.id.iCat);
+                        int w = iCat.getMeasuredWidth();
+
+                        // Get scaled image
+                        BitmapFactory.Options options = new BitmapFactory.Options();
+                        options.inJustDecodeBounds = true;
+                        BitmapFactory.decodeResource(getResources(), R.drawable.eastercat, options);
+                        if (options.outWidth > w)
+                            options.inSampleSize = (int) Math.ceil((double) options.outWidth / (double) w);
+                        options.inJustDecodeBounds = false;
+                        iCat.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.eastercat, options));
+                    }
+                });
             }
         }
 

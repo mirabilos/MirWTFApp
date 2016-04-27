@@ -8,6 +8,5 @@
         android:layout_height="match_parent"
         android:id="@+id/iCat"
         android:adjustViewBounds="true"
-        android:scaleType="centerCrop"
-        android:src="@drawable/eastercat" />
+        android:scaleType="centerCrop" />
 </LinearLayout>

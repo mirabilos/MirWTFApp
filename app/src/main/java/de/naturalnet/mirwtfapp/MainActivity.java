@@ -184,7 +184,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             mProgressDialog.dismiss();
             Toast.makeText(context, result, Toast.LENGTH_LONG).show();
 
-            // Relaod acronyms after downloading
+            // Reload acronyms after downloading
             MainActivity.this.loadAcronymsDb();
         }
     }
@@ -292,7 +292,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         });
 
-        // Check for existence of acronyms file and downlaod if it does not exist
+        // Check for existence of acronyms file and download if it does not exist
         File db = new File(getFilesDir() + "/acronyms.db");
         if (db.exists()) {
             loadAcronymsDb();
@@ -338,7 +338,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         // Find out what menu entry was clicked
         if (id == R.id.action_update) {
-            // "Update" item - run downlaod task
+            // "Update" item - run download task
             wtfDownloadTask = new WTFDownloadTask(MainActivity.this);
             wtfDownloadTask.execute();
         } else if (id == R.id.action_about) {

@@ -1,5 +1,5 @@
 /*-
- * Copyright © 2015
+ * Copyright © 2015, 2016
  *      Dominik George <nik@naturalnet.de>
  *
  * Provided that these terms and disclaimer and all copyright notices
@@ -184,7 +184,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             mProgressDialog.dismiss();
             Toast.makeText(context, result, Toast.LENGTH_LONG).show();
 
-            // Relaod acronyms after downloading
+            // Reload acronyms after downloading
             MainActivity.this.loadAcronymsDb();
         }
     }
@@ -232,7 +232,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             protected void onCreate(android.os.Bundle savedInstanceState) {
                 super.onCreate(savedInstanceState);
+                // get the progress bar the progress dialogue uses
+                // from http://stackoverflow.com/a/21815254/2171120 by VallyN
                 ProgressBar bar = (ProgressBar) findViewById(android.R.id.progress);
+                // set colour on progress bar
+                // from http://stackoverflow.com/a/15809803/2171120 by Torben Kohlmeier
                 bar.getProgressDrawable().setColorFilter(0xFF22C819 /*XXX FIXME getColor(R.color.colorAccent)*/, android.graphics.PorterDuff.Mode.SRC_IN);
                 bar.getIndeterminateDrawable().setColorFilter(0xFF22C819 /*XXX FIXME getColor(R.color.colorAccent)*/, android.graphics.PorterDuff.Mode.SRC_IN);
             }
@@ -292,7 +296,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         });
 
-        // Check for existence of acronyms file and downlaod if it does not exist
+        // Check for existence of acronyms file and download if it does not exist
         File db = new File(getFilesDir() + "/acronyms.db");
         if (db.exists()) {
             loadAcronymsDb();
@@ -319,6 +323,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         AlertDialog dialog = builder.show();
 
         // Set title divider color
+        // from http://blog.supenta.com/2014/07/02/how-to-style-alertdialogs-like-a-pro/
         int titleDividerId = getResources().getIdentifier("titleDivider", "id", "android");
         View titleDivider = dialog.findViewById(titleDividerId);
         if (titleDivider != null)
@@ -338,7 +343,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         // Find out what menu entry was clicked
         if (id == R.id.action_update) {
-            // "Update" item - run downlaod task
+            // "Update" item - run download task
             wtfDownloadTask = new WTFDownloadTask(MainActivity.this);
             wtfDownloadTask.execute();
         } else if (id == R.id.action_about) {

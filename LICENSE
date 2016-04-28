@@ -1,6 +1,8 @@
 /*-
- * Copyright © 2015
+ * Copyright © 2015, 2016
  *      Dominik George <nik@naturalnet.de>
+ * Copyright © 2016
+ *	mirabilos <m@mirbsd.org>
  *
  * Provided that these terms and disclaimer and all copyright notices
  * are retained or reproduced in an accompanying document, permission
@@ -22,3 +24,5 @@ The silhouette dæmon in the logo is Copyright © 2003 by Rick Collette
 with credits for the original dæmon to © 1988 Marshall Kirk McKusick.
 It and the “Mir” in the name are used with permission from the MirBSD
 project leader. For details, refer to: https://www.mirbsd.org/LICENCE
+
+Cat content © 2015 Dominik George, CC-BY-SA 3.0+

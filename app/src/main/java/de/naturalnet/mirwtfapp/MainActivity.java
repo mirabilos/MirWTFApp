@@ -185,7 +185,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             Toast.makeText(context, result, Toast.LENGTH_LONG).show();
 
             // Reload acronyms after downloading
-            MainActivity.this.loadAcronymsDb();
+            MainActivity.this.loadAcronymsDb(null);
         }
     }
 
@@ -299,7 +299,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // Check for existence of acronyms file and download if it does not exist
         File db = new File(getFilesDir() + "/acronyms.db");
         if (db.exists()) {
-            loadAcronymsDb();
+            loadAcronymsDb(db);
         } else {
             wtfDownloadTask = new WTFDownloadTask(MainActivity.this);
             wtfDownloadTask.execute();
@@ -462,7 +462,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     /**
      * Load acronyms database into Hashtable
      */
-    public void loadAcronymsDb() {
+    public void loadAcronymsDb(File db) {
         // Empty Hashtables
         if (acronyms == null) {
             acronyms = new Hashtable<>();
@@ -477,7 +477,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         try {
             // Open acronyms.db and initialise reader
-            File db = new File(getFilesDir() + "/acronyms.db");
+            if (db == null) {
+                db = new File(getFilesDir() + "/acronyms.db");
+            }
             BufferedReader r = new BufferedReader(new FileReader(db));
 
             // Read file line by line into Hashtable

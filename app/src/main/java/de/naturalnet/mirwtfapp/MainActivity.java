@@ -47,10 +47,11 @@ import android.widget.WtfArrayAdapter;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -58,6 +59,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.Locale;
+import java.util.zip.GZIPInputStream;
 
 /**
  * Main activity of the WTF app
@@ -65,8 +67,10 @@ import java.util.Locale;
  * @author Dominik George <nik@naturalnet.de>
  */
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+    public static final String ACRONYMS_FILENAME = "acronyms.gz";
+
     /**
-     * Asynchronous task used to download acronyms.db from MirBSD.org
+     * Asynchronous task used to download acronyms database from MirBSD.org
      */
     public class WTFDownloadTask extends AsyncTask<String, Integer, String> {
         private Context context;
@@ -95,8 +99,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             try {
                 // Set up connection via HTTP to known acronyms URL
-                URL url = new URL("https://www.mirbsd.org/acronyms");
+                URL url = new URL("https://www.mirbsd.org/acronyms.gz");
                 connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestProperty("Accept-Encoding", "identity");
                 connection.connect();
 
                 // Return error and stop if not status 200
@@ -110,7 +115,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                 // Set up streams to read and write
                 input = connection.getInputStream();
-                output = new FileOutputStream(getFilesDir() + "/acronyms.db");
+                output = new FileOutputStream(getFilesDir() + "/" + MainActivity.ACRONYMS_FILENAME);
 
                 // Set up byte array and counters for progress notification
                 byte data[] = new byte[4096];
@@ -148,7 +153,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
 
             // Message success
-            return "Successfully downloaded acronyms.db";
+            return "Successfully downloaded acronyms database";
         }
 
         /**
@@ -272,8 +277,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         // Do acronyms search
                         doWTFSearch();
                     } catch (Exception e) {
-                        // Show toast with error if acronyms.db could not be searched
-                        Toast.makeText(MainActivity.this, "Error searching acronyms.db", Toast.LENGTH_LONG).show();
+                        // Show toast with error if acronyms database could not be searched
+                        Toast.makeText(MainActivity.this, "Error searching acronyms database", Toast.LENGTH_LONG).show();
                     }
                 }
                 return true;
@@ -290,14 +295,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     // Do acronyms search
                     doWTFSearch();
                 } catch (Exception e) {
-                    // Show toast with error if acronyms.db could not be searched
-                    Toast.makeText(MainActivity.this, "Error searching acronyms.db", Toast.LENGTH_LONG).show();
+                    // Show toast with error if acronyms database could not be searched
+                    Toast.makeText(MainActivity.this, "Error searching acronyms database", Toast.LENGTH_LONG).show();
                 }
             }
         });
 
         // Check for existence of acronyms file and download if it does not exist
-        File db = new File(getFilesDir() + "/acronyms.db");
+        File db = new File(getFilesDir(), ACRONYMS_FILENAME);
         if (db.exists()) {
             loadAcronymsDb(db);
         } else {
@@ -377,7 +382,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // Upper case A-Z first
         acronym = acronym.toUpperCase(Locale.ENGLISH);
 
-        // Upper case with limited matching rules loaded from acronyms.db
+        // Upper case with limited matching rules loaded from acronyms database
         for (String original : uppercasables.keySet()) {
             acronym = acronym.replace(original, uppercasables.get(original));
         }
@@ -393,7 +398,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     /**
      * Method called to do an actual search on acronyms
      *
-     * @throws IOException if acronyms.db could not be read
+     * @throws IOException if acronyms database could not be read
      */
     private void doWTFSearch() throws IOException {
         // Normalise input
@@ -475,12 +480,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             uppercasables.clear();
         }
 
+        // Opportunistically remove old uncompressed acronyms database
+        File oldDB = new File(getFilesDir(), "acronyms.db");
+        oldDB.delete();
+
         try {
-            // Open acronyms.db and initialise reader
+            // Open acronyms database and initialise reader
             if (db == null) {
-                db = new File(getFilesDir() + "/acronyms.db");
+                db = new File(getFilesDir(), ACRONYMS_FILENAME);
             }
-            BufferedReader r = new BufferedReader(new FileReader(db));
+            BufferedReader r = new BufferedReader(new InputStreamReader(new GZIPInputStream(new FileInputStream(db))));
 
             // Read file line by line into Hashtable
             String line;
@@ -507,7 +516,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
             }
         } catch (IOException e) {
-            Toast.makeText(this, "Error reading acronyms.db", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Error reading acronyms database", Toast.LENGTH_LONG).show();
         }
 
         // Link list of known acronyms to text field auto completion
@@ -530,8 +539,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 // Do acronyms search
                 doWTFSearch();
             } catch (Exception e) {
-                // Show toast with error if acronyms.db could not be searched
-                Toast.makeText(this, "Error searching acronyms.db", Toast.LENGTH_LONG).show();
+                // Show toast with error if acronyms database could not be searched
+                Toast.makeText(this, "Error searching acronyms database", Toast.LENGTH_LONG).show();
             }
         }
     }

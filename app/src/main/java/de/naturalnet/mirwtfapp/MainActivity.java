@@ -1,5 +1,5 @@
 /*-
- * Copyright © 2015, 2016
+ * Copyright © 2015, 2016, 2017
  *      Dominik George <nik@naturalnet.de>
  *
  * Provided that these terms and disclaimer and all copyright notices

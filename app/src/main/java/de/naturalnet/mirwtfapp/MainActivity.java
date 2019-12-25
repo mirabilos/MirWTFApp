@@ -25,6 +25,8 @@ import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -108,7 +110,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             // Download version information
             try {
                 // Set up connection via HTTP to known acronyms URL
-                URL url = new URL("https://www.mirbsd.org/acronyms.ver");
+                URL url = new URL("http://www.mirbsd.org/acronyms.ver");
                 connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestProperty("Accept-Encoding", "identity");
                 connection.connect();
@@ -174,7 +176,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             try {
                 // Set up connection via HTTP to known acronyms URL
-                URL url = new URL("https://www.mirbsd.org/acronyms.gz");
+                URL url = new URL("http://www.mirbsd.org/acronyms.gz");
                 connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestProperty("Accept-Encoding", "identity");
                 connection.connect();
@@ -310,6 +312,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        // Register code for reloading acronyms on update
+        BroadcastReceiver br = new MyBroadcastReceiver();
+        IntentFilter filter = new IntentFilter("de.naturalnet.mirwtfapp.ACRONYMS_RELOAD");
+        this.registerReceiver(br, filter);
+
         // Initalise progress dialog
         mProgressDialog = new ProgressDialog(MainActivity.this) {
             @Override
@@ -441,6 +448,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             int numExpansions = 0;
             for (ArrayList expansions : acronyms.values()) {
                 numExpansions += expansions.size();
+            }
+            // Set version number
+            TextView tVersion = (TextView) messageView.findViewById(R.id.tVersion);
+            try {
+                tVersion.setText("App version: " + getApplicationContext().getPackageManager().getPackageInfo(getApplicationContext().getPackageName(), 0).versionName);
+            } catch (PackageManager.NameNotFoundException e) {
+                e.printStackTrace();
             }
             // Set acronyms info in about dialog
             TextView tAcronyms = (TextView) messageView.findViewById(R.id.tAcronyms);
@@ -612,12 +626,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         eAcronym.setAdapter(acronymKeys);
     }
 
-    public class MyBroadcastreceiver extends BroadcastReceiver {
+    public class MyBroadcastReceiver extends BroadcastReceiver {
+        private static final String TAG = "MyBroadcastReceiver";
+
         @Override
         public void onReceive ( final Context context, final Intent intent){
-            if (intent.getAction().equals("de.naturalnet.mirwtfapp.ACRONYMS_RELOAD")) {
-                MainActivity.this.loadAcronymsDb(null);
-            }
+            MainActivity.this.loadAcronymsDb(null);
         }
     }
 

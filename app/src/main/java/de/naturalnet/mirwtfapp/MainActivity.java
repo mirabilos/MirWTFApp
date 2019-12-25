@@ -22,7 +22,9 @@ package de.naturalnet.mirwtfapp;
 
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -45,12 +47,14 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.WtfArrayAdapter;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -58,6 +62,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.Locale;
+import java.util.zip.GZIPInputStream;
 
 /**
  * Main activity of the WTF app
@@ -65,8 +70,10 @@ import java.util.Locale;
  * @author Dominik George <nik@naturalnet.de>
  */
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+    public static final String ACRONYMS_FILENAME = "acronyms.gz";
+
     /**
-     * Asynchronous task used to download acronyms.db from MirBSD.org
+     * Asynchronous task used to download acronyms database from MirBSD.org
      */
     public class WTFDownloadTask extends AsyncTask<String, Integer, String> {
         private Context context;
@@ -92,11 +99,84 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             InputStream input = null;
             OutputStream output = null;
             HttpURLConnection connection = null;
+            FileInputStream ver_file = null;
+
+            // Version strings
+            String new_ver = "";
+            String old_ver = "";
+
+            // Download version information
+            try {
+                // Set up connection via HTTP to known acronyms URL
+                URL url = new URL("https://www.mirbsd.org/acronyms.ver");
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestProperty("Accept-Encoding", "identity");
+                connection.connect();
+
+                // Return error and stop if not status 200
+                if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                    return "Download error: HTTP " + connection.getResponseCode()
+                            + " " + connection.getResponseMessage();
+                }
+
+                // Set up streams to read and write
+                input = connection.getInputStream();
+
+                // Read stream line by line
+                BufferedReader reader = new BufferedReader(new InputStreamReader(input));
+                new_ver = reader.readLine();
+            } catch (Exception e) {
+                // Return any exception to the user
+                return e.toString();
+            } finally {
+                // Clean up streams
+                try {
+                    if (input != null)
+                        input.close();
+                } catch (IOException ignored) {
+                    // Closing is not critical
+                }
+
+                // Close connection in case server used keep-alive
+                if (connection != null)
+                    connection.disconnect();
+            }
+
+            // Get old version
+            try {
+                ver_file = new FileInputStream(getFilesDir() + "/" + MainActivity.ACRONYMS_FILENAME);
+                BufferedReader ver_file_reader = new BufferedReader(new InputStreamReader(new GZIPInputStream(ver_file)));
+
+                String line = ver_file_reader.readLine();
+                while (line != null) {
+                    if (line.startsWith(" @(#)$MirOS: www/.linked/acronyms,v ")) {
+                        old_ver = line.substring(5);
+                        break;
+                    }
+                    line = ver_file_reader.readLine();
+                }
+            } catch (Exception e) {
+                // Reading version file is not critical
+            } finally {
+                // Clean up streams
+                try {
+                    if (ver_file != null)
+                        ver_file.close();
+                } catch (IOException ignored) {
+                    // Closing is not critical
+                }
+            }
+
+            // Return if version has not changed
+            if (new_ver.trim().equals(old_ver.trim())) {
+                return "Acronyms are up to date.";
+            }
 
             try {
                 // Set up connection via HTTP to known acronyms URL
-                URL url = new URL("https://www.mirbsd.org/acronyms");
+                URL url = new URL("https://www.mirbsd.org/acronyms.gz");
                 connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestProperty("Accept-Encoding", "identity");
                 connection.connect();
 
                 // Return error and stop if not status 200
@@ -110,7 +190,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                 // Set up streams to read and write
                 input = connection.getInputStream();
-                output = new FileOutputStream(getFilesDir() + "/acronyms.db");
+                output = new FileOutputStream(getFilesDir() + "/" + MainActivity.ACRONYMS_FILENAME);
 
                 // Set up byte array and counters for progress notification
                 byte data[] = new byte[4096];
@@ -148,7 +228,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
 
             // Message success
-            return "Successfully downloaded acronyms.db";
+            return "Successfully downloaded acronyms database";
         }
 
         /**
@@ -185,7 +265,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             Toast.makeText(context, result, Toast.LENGTH_LONG).show();
 
             // Reload acronyms after downloading
-            MainActivity.this.loadAcronymsDb();
+            Intent updateIntent = new Intent();
+            updateIntent.setAction("de.naturalnet.mirwtfapp.ACRONYMS_RELOAD");
+            sendBroadcast(updateIntent);
         }
     }
 
@@ -209,6 +291,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     // Data hashtables
     Hashtable<String, ArrayList<String>> acronyms;
     Hashtable<String, String> uppercasables;
+    String acronyms_version;
 
     // Counter for eastercat
     private int cats = 0;
@@ -272,8 +355,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         // Do acronyms search
                         doWTFSearch();
                     } catch (Exception e) {
-                        // Show toast with error if acronyms.db could not be searched
-                        Toast.makeText(MainActivity.this, "Error searching acronyms.db", Toast.LENGTH_LONG).show();
+                        // Show toast with error if acronyms database could not be searched
+                        Toast.makeText(MainActivity.this, "Error searching acronyms database", Toast.LENGTH_LONG).show();
                     }
                 }
                 return true;
@@ -290,16 +373,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     // Do acronyms search
                     doWTFSearch();
                 } catch (Exception e) {
-                    // Show toast with error if acronyms.db could not be searched
-                    Toast.makeText(MainActivity.this, "Error searching acronyms.db", Toast.LENGTH_LONG).show();
+                    // Show toast with error if acronyms database could not be searched
+                    Toast.makeText(MainActivity.this, "Error searching acronyms database", Toast.LENGTH_LONG).show();
                 }
             }
         });
 
         // Check for existence of acronyms file and download if it does not exist
-        File db = new File(getFilesDir() + "/acronyms.db");
+        File db = new File(getFilesDir(), ACRONYMS_FILENAME);
         if (db.exists()) {
-            loadAcronymsDb();
+            loadAcronymsDb(db);
         } else {
             wtfDownloadTask = new WTFDownloadTask(MainActivity.this);
             wtfDownloadTask.execute();
@@ -353,9 +436,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             builder.setIcon(R.mipmap.ic_launcher);
             builder.setTitle(R.string.app_name);
             builder.setView(messageView);
+            // Get numbers
+            int numAcronyms = acronyms.size();
+            int numExpansions = 0;
+            for (ArrayList expansions : acronyms.values()) {
+                numExpansions += expansions.size();
+            }
             // Set acronyms info in about dialog
             TextView tAcronyms = (TextView) messageView.findViewById(R.id.tAcronyms);
-            tAcronyms.setText("WTF knows about " + acronyms.size() + " acronyms.");
+            tAcronyms.setText("Acronyms database version " + acronyms_version + "\n\nWTF knows about " + numAcronyms + " acronyms and " + numExpansions + " expansions.");
             if (cats >= 3) {
                 TextView tAcronymsSource = (TextView) messageView.findViewById(R.id.tAcronymsSource);
                 tAcronymsSource.append("\n\nCat content © 2015 Dominik George, CC-BY-SA 3.0+.");
@@ -377,7 +466,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // Upper case A-Z first
         acronym = acronym.toUpperCase(Locale.ENGLISH);
 
-        // Upper case with limited matching rules loaded from acronyms.db
+        // Upper case with limited matching rules loaded from acronyms database
         for (String original : uppercasables.keySet()) {
             acronym = acronym.replace(original, uppercasables.get(original));
         }
@@ -393,7 +482,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     /**
      * Method called to do an actual search on acronyms
      *
-     * @throws IOException if acronyms.db could not be read
+     * @throws IOException if acronyms database could not be read
      */
     private void doWTFSearch() throws IOException {
         // Normalise input
@@ -462,7 +551,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     /**
      * Load acronyms database into Hashtable
      */
-    public void loadAcronymsDb() {
+    public void loadAcronymsDb(File db) {
         // Empty Hashtables
         if (acronyms == null) {
             acronyms = new Hashtable<>();
@@ -475,10 +564,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             uppercasables.clear();
         }
 
+        // Opportunistically remove old uncompressed acronyms database
+        File oldDB = new File(getFilesDir(), "acronyms.db");
+        oldDB.delete();
+
         try {
-            // Open acronyms.db and initialise reader
-            File db = new File(getFilesDir() + "/acronyms.db");
-            BufferedReader r = new BufferedReader(new FileReader(db));
+            // Open acronyms database and initialise reader
+            if (db == null) {
+                db = new File(getFilesDir(), ACRONYMS_FILENAME);
+            }
+            BufferedReader r = new BufferedReader(new InputStreamReader(new GZIPInputStream(new FileInputStream(db))));
 
             // Read file line by line into Hashtable
             String line;
@@ -502,10 +597,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         String[] kv = pair.split("/");
                         uppercasables.put(kv[0], kv[1]);
                     }
+                } else if (line.startsWith(" @(#)$MirOS: www/.linked/acronyms,v ")) {
+                    acronyms_version = line.substring(36, line.length()-6);
                 }
             }
         } catch (IOException e) {
-            Toast.makeText(this, "Error reading acronyms.db", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Error reading acronyms database", Toast.LENGTH_LONG).show();
         }
 
         // Link list of known acronyms to text field auto completion
@@ -513,6 +610,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Arrays.sort(sorted);
         ArrayAdapter acronymKeys = new WtfArrayAdapter<>(this, android.R.layout.simple_list_item_1, sorted, this);
         eAcronym.setAdapter(acronymKeys);
+    }
+
+    public class MyBroadcastreceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive ( final Context context, final Intent intent){
+            if (intent.getAction().equals("de.naturalnet.mirwtfapp.ACRONYMS_RELOAD")) {
+                MainActivity.this.loadAcronymsDb(null);
+            }
+        }
     }
 
     /**
@@ -528,8 +634,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 // Do acronyms search
                 doWTFSearch();
             } catch (Exception e) {
-                // Show toast with error if acronyms.db could not be searched
-                Toast.makeText(this, "Error searching acronyms.db", Toast.LENGTH_LONG).show();
+                // Show toast with error if acronyms database could not be searched
+                Toast.makeText(this, "Error searching acronyms database", Toast.LENGTH_LONG).show();
             }
         }
     }
